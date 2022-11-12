@@ -1,0 +1,2 @@
+head -n 1200000 ./data/corpus.shuf.tsv > ./data/corpus.shuf.train.tsv ; tail -n 402409 ./data/corpus.shuf.tsv | head -n 200000 > ./data/corpus.shuf.valid.tsv
+tail -n 202409 ./data/corpus.shuf.tsv > ./data/corpus.shuf.test.tsv

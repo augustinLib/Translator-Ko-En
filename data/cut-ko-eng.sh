@@ -1,0 +1,3 @@
+cut -f1 ./data/corpus.shuf.train.tsv > ./data/corpus.shuf.train.ko ; cut -f2 ./data/corpus.shuf.train.tsv > ./data/corpus.shuf.train.en
+cut -f1 ./data/corpus.shuf.valid.tsv > ./data/corpus.shuf.valid.ko ; cut -f2 ./data/corpus.shuf.valid.tsv > ./data/corpus.shuf.valid.en
+cut -f1 ./data/corpus.shuf.test.tsv > ./data/corpus.shuf.test.ko ; cut -f2 ./data/corpus.shuf.test.tsv > ./data/corpus.shuf.test.en
