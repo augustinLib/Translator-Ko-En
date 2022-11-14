@@ -1,0 +1,2 @@
+python ./data/subword-nmt/learn_bpe.py --input ./data/corpus.shuf.train.tok.en --output ./data/bpe.en.model --symbols 50000 --verbose
+python ./data/subword-nmt/learn_bpe.py --input ./data/corpus.shuf.train.tok.ko --output ./data/bpe.ko.model --symbols 30000 --verbose
