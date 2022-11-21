@@ -3,10 +3,31 @@ import torch.nn as nn
 from torch.nn.utils.rnn import pack_padded_sequence as pack
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 
+
+# nn.modules 상속
+# attention은 query를 변환하는 방법인 linear transformation을 학습함
+class Attention(nn.modules):
+    def __init__(self, hidden_size):
+        super(Attention, self).__init__()
+
+        # linear transformation
+        self.linear = nn.Linear(hidden_size, hidden_size, bias=False)
+        # query와 key를 곱한 것에다가 softmax 적용
+        self.softmax = nn.Softmax(dim=-1)
+
+    def forward(self, h_src, h_t_tgt, mask=None):
+
+        query = self.linear(h_t_tgt)
+
+
+
+
+
+
 # nn.modules 상속
 class Encoder(nn.modules):
     def __init__(self, wordvec_dim, hidden_size, n_layers = 4, dropout_p = .2):
-        super(self).__init__()
+        super(Encoder, self).__init__()
 
         self.rnn = nn.LSTM(
             wordvec_dim,
