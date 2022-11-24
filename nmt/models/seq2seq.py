@@ -15,11 +15,24 @@ class Attention(nn.modules):
         # query와 key를 곱한 것에다가 softmax 적용
         self.softmax = nn.Softmax(dim=-1)
 
-    def forward(self, h_src, h_t_tgt, mask=None):
+    def forward(self, h_enc, h_t_dec, mask=None):
+        # |h_enc| = (batch_size, length, hidden_size)
+        # |h_t_dec| = (batch_size, 1, hidden_size)
+        # |mask| = (batch_size, length)
 
-        query = self.linear(h_t_tgt)
+        # linear tranform을 통한 Query 생성
+        query = self.linear(h_t_dec)
+        # Query에 encoder의 hidden state 행렬곱 진행함으로써 각 단어(Key)의 가중치(유사도) 벡터 return
+        # torch.bmm : Batch Matrix Multiplication
+        # transpose(1, 2) : batch를 가리키는 index인 0을 제외하고 row(0)와 col(1)만 transpose
+        weight = torch.bmm(query, h_enc.transpose(1, 2))
 
-
+        if mask is not None:
+            # masked_fill : mask에 True가 있는 위치(<PAD>의 위치에 True가 있음)에 음의 무한대로 치환
+            weight.masked_fill_(mask.unsqueeze(1), -float('inf'))
+        weight = self.softmax(weight)
+        context_vector = torch.bmm(weight, h_enc)
+        return context_vector
 
 
 
