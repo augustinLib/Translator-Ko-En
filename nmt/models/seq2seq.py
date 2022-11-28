@@ -128,3 +128,18 @@ class Decoder(nn.Module):
         y, hidden = self.rnn(x, h_t_1)
         
         return y, hidden
+    
+    
+ # nn.modules 상속   
+class Generator(nn.Module):
+    def __init__(self, hidden_size, output_size):
+        super(Generator, self).__init__()
+        
+        self.output = nn.Linear(hidden_size, output_size)
+        # 마지막 차원에 대해 LogSoftmax 적용
+        self.softmax = nn.LogSoftmax(dim=-1)
+        
+    def forward(self, x):
+        y = self.softmax(self.output(x))
+        
+        return y
