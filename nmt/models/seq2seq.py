@@ -89,3 +89,42 @@ class Encoder(nn.modules):
 
         return y, hidden
         
+
+# nn.modules 상속
+class Decoder(nn.Module):
+    def __init__(self, word_vec_size, hidden_size, n_layers = 4, dropout_p = .2):
+        super(Decoder, self).__init__()
+        
+        self.rnn = nn.LSTM(
+            # input feeding을 위해 이전 timestep의 h_tilde concat하기 때문에 input size는 word_vec_size + hidden_size
+            word_vec_size + hidden_size,
+            hidden_size,
+            num_layers = n_layers,
+            dropout = dropout_p,
+            # decoder는 autoregressive하기 때문에 bidirectional = False
+            bidirectional = False,
+            batch_first = True
+        )
+    
+    # decoder의 forward는 encoder의 forward와는 다르게 하나의 timestep씩 입력으로 들어옴
+    def forward(self, emb_t, h_t_1_tilde, h_t_1):
+        # emb_t : 현재 timestep의 embedding vector -> (batch_size, 1, embedding_size)
+        # h_t_1_tilde : 이전 timestep의 output -> (batch_size, 1, hidden_size)
+        # h_t_1 : 이전 timestep의 hidden state, h_t_1 = 이전 timestep의 hidden state와 cell state가 같이 들어가있을 것
+        # 따라서 h_t_1[0]으로 hidden state 추출 -> (n_layers, batch_size, hidden_size)
+        
+        batch_size = emb_t.size(0)
+        hidden_size = h_t_1[0].size(-1)
+        
+        # 첫 timestep
+        if h_t_1_tilde is None:
+            # (batch_size, 1, hidden_size) shape으로 0으로 채워진 tensor 생성
+            # emb_t.new(shape) : emb_t와 같은 device, 같은 type으로 (shape)의 크기를 가진 텐서 생성
+            h_t_1_tilde = emb_t.new(batch_size, 1, hidden_size).zero_()
+        
+        # 마지막 dim으로 concat -> (batch size, 1, hidden_size + embedding_size)
+        x = torch.cat([emb_t, h_t_1_tilde], dim = -1)
+        
+        y, hidden = self.rnn(x, h_t_1)
+        
+        return y, hidden
