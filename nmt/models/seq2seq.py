@@ -224,6 +224,8 @@ class Seq2Seq(nn.Module):
         
         return mask
     
+    
+    # encoder의 마지막 hidden state를 decoder의 첫 hidden state로 넣어줘야함
     # encoder의 hidden state sequential하게 merge
     def merge_encoder_hiddens(self, encoder_hiddens):
         new_hiddens = []
@@ -247,7 +249,8 @@ class Seq2Seq(nn.Module):
         return (new_hiddens, new_cells)
     
     
-     # encoder의 hidden state parallel하게 merge
+    # encoder의 마지막 hidden state를 decoder의 첫 hidden state로 넣어줘야함
+    # encoder의 hidden state parallel하게 merge
     def fast_merge_encoder_hiddens(self, encoder_hiddens):
         h_0_dec, c_0_dec = encoder_hiddens
         # |h_0_dec| : (#layers * 2, batch_size, hidden_size / 2)
@@ -305,7 +308,45 @@ class Seq2Seq(nn.Module):
         # |h_enc| : (batch_size, length, hidden_size)
         # |h_0_dec| : (n_layers * 2, batch_size, hidden_size / 2)
         
-            
-            
+        h_0_dec = self.fast_merge_encoder_hiddens(h_0_dec)
+        emb_dec = self.emb_dec(tgt)
+        # |emb_dec| : (batch_size, length, word_vec_size)
         
+        h_tilde = []
         
+        h_t_tilde = None
+        decoder_hidden = h_0_dec
+        for t in range(tgt.size(1)):
+            emb_t = emb_dec[:, t, :].unsqueeze(1)
+            # |emb_dec[:, t, :]| : (batch_size, word_vec_size) -> unsqueeze(1)
+            # |emb_t| : (batch_size, 1, word_vec_size)
+            # |h_t_tilde| : (batch_size, 1, hidden_size)
+            
+            decoder_output, decoder_hidden = self.decoder(emb_t,
+                                                          h_t_tilde,
+                                                          decoder_hidden
+                                                          )
+            
+            # |decoder_output| : (batch_size, 1, hidden_size)
+            # |decoder_hidden| : (n_layers, 1, hidden_size)
+            
+            context_vector = self.attention(h_enc, decoder_output, mask)
+            # |context_vector| : (batch_size, 1, hidden_size)
+            
+            h_t_tilde = self.tanh(self.concat(torch.concat([decoder_output,
+                                                            context_vector
+                                                            ],
+                                                            dim=-1)
+                                              )
+                                  )
+            # |h_t_tilde| = (batch_size, 1, hidden_size)
+            h_tilde += [h_t_tilde]
+        
+        h_tilde = torch.cat(h_tilde, dim= 1)
+        # |h_tilde| : (batch_size, 1, hidden_size)
+        
+        y_hat = self.generator(h_tilde)
+        # |y_hat| : (batch_size, 1, output_size)
+        
+        return y_hat
+            
