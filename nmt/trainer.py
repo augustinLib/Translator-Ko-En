@@ -12,7 +12,7 @@ from ignite.engine import Events
 from ignite.metrics import RunningAverage
 from ignite.contrib.handlers.tqdm_logger import ProgressBar
 
-from utils import get_parameter_norm, get_grad_norm
+from nmt.utils import get_grad_norm, get_parameter_norm
 
 
 # ignite.engine.Engine 상속
@@ -70,7 +70,7 @@ class MaximumLikelihoodEstimationEngine(Engine):
             # |y_hat| : (batch_size, length, output_size)
             
             loss = engine.crit(
-                y_hat.contiguous.view(-1, y_hat.size(-1)), y.contiguous().view(-1)
+                y_hat.contiguous().view(-1, y_hat.size(-1)), y.contiguous().view(-1)
                 # |y|, |y_hat| : (batch_size * length)
             )
             # accumulated된 loss를 batch size로 나눠주고, gradient accumulation을 위해 설정한 지정된 횟수의 iteration 수로 나눠줌
@@ -92,7 +92,7 @@ class MaximumLikelihoodEstimationEngine(Engine):
         # engine.config.iteration_per_update에 지정된 횟수의 iteration이 지나면 gradient update
         if engine.state.iteration % engine.config.iteration_per_update == 0:
             # gradient clipping 수행
-            torch.nn.utils.clip_grad.clip_grad_norm(
+            torch.nn.utils.clip_grad.clip_grad_norm_(
                 engine.model.parameters(),
                 engine.config.max_grad_norm,
             )
@@ -106,9 +106,6 @@ class MaximumLikelihoodEstimationEngine(Engine):
             else:
                 engine.optimizer.step()
                 
-            # lr_scheduler 사용중이면 스케쥴러 update
-            if engine.config.use_norm_decay and engine.lr_scheduler is not None:
-                engine.lr_scheduler.step()
                 
         # 단어당 loss값 평균
         loss = float(loss / word_count)
@@ -148,7 +145,7 @@ class MaximumLikelihoodEstimationEngine(Engine):
                 # |y_hat| : (batch_size, length, output_size)
             
                 loss = engine.crit(
-                    y_hat.contiguous.view(-1, y_hat.size(-1)), y.contiguous().view(-1)
+                    y_hat.contiguous().view(-1, y_hat.size(-1)), y.contiguous().view(-1)
                     # |y|, |y_hat| : (batch_size * length)
                 )
                 
@@ -179,8 +176,8 @@ class MaximumLikelihoodEstimationEngine(Engine):
             # train engine의 epoch이 끝날때마다 출력
             @train_engine.on(Events.EPOCH_COMPLETED)
             def print_train_logs(engine):
-                avg_p_norm = engine.state.metrics["|params|"]
-                avg_g_norm = engine.state.metrics["|g_params|"]
+                avg_p_norm = engine.state.metrics["|param|"]
+                avg_g_norm = engine.state.metrics["|g_param|"]
                 avg_loss = engine.state.metrics["loss"]
                 
                 print("Epoch{} - |param| = {:.2e} |g_param| = {:.2e} loss={:.4e} ppl={:.2f}".format(engine.state.epoch,
@@ -290,7 +287,7 @@ class SingleTrainer():
             # ignite는 따로 validation을 위한 process가 있는것이 아니어서, max_epochs를 1로 설정하여 validation 구현
             validation_engine.run(valid_loader, max_epochs=1)
             
-            if engine.lr_scheduler is not None and not engine.config.use_norm_decay:
+            if engine.lr_scheduler is not None:
                 engine.lr_scheduler.step()
                 
         # train_engine의 epoch이 끝날때마다(Events.EPOCH_COMPLETED) run_validation 함수 실행    

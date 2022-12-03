@@ -118,12 +118,12 @@ class TranslationDataset(Dataset):
     Dataset class for machine translator
     inherited class from torch.utils.data.Dataset
     """
-    def __init__(self, texts:list, src_vocab:torchtext.vocab.Vocab, tgt_vocab:torchtext.vocab.Vocab, special_tokens_at_both:bool = False): 
+    def __init__(self, texts:list, src_vocab:torchtext.vocab.Vocab, tgt_vocab:torchtext.vocab.Vocab, special_token_at_both:bool = False): 
         """_summary_
         Dataset class for machine translator
         inherited class from torch.utils.data.Dataset
         Args:
-            texts (list): ㅇata that needs to be converted to a Dataset
+            texts (list): data that needs to be converted to a Dataset
             src_vocab (torchtext.vocab.Vocab): source data vocab
             tgt_vocab (torchtext.vocab.Vocab): target data vocab
             special_tokens_at_both (bool, optional): _description_. Defaults to False.
@@ -131,7 +131,7 @@ class TranslationDataset(Dataset):
         self.texts = texts
         self.src_vocab = src_vocab
         self.tgt_vocab = tgt_vocab
-        self.special_token_at_both = special_tokens_at_both
+        self.special_token_at_both = special_token_at_both
         
         for i in range(len(texts)):
             if self.special_token_at_both:
